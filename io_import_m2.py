@@ -526,9 +526,9 @@ class Importer:
             uvtex.name = submesh.name
             for n, face in enumerate(faces):
                 datum = uvtex.data[n]
-                datum.uv1 = (submesh_vertices[face[0]].texture_coords[0], submesh_vertices[face[0]].texture_coords[1])
-                datum.uv2 = (submesh_vertices[face[1]].texture_coords[0], submesh_vertices[face[1]].texture_coords[1])
-                datum.uv3 = (submesh_vertices[face[2]].texture_coords[0], submesh_vertices[face[2]].texture_coords[1])
+                datum.uv1 = (submesh_vertices[face[0]].texture_coords[0], 1.0 - submesh_vertices[face[0]].texture_coords[1])
+                datum.uv2 = (submesh_vertices[face[1]].texture_coords[0], 1.0 - submesh_vertices[face[1]].texture_coords[1])
+                datum.uv3 = (submesh_vertices[face[2]].texture_coords[0], 1.0 - submesh_vertices[face[2]].texture_coords[1])
 
             # Create the vertex groups
             vgroups = {}
