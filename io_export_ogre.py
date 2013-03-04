@@ -116,7 +116,7 @@ class Exporter:
 
                 if face.use_smooth:
                     for vertex_index, vi in enumerate(face.vertices):
-                        if not(vertices_map.has_key(vi)):
+                        if not(vi in vertices_map):
                             uvs = list(map(lambda x: (x.data[face_index].uv[vertex_index][0], x.data[face_index].uv[vertex_index][1]), obj.data.uv_textures))
 
                             v = vertices[vi]
