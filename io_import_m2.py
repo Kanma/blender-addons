@@ -1,8 +1,7 @@
 bl_info = {
     "name": "Blizzard .M2 importer",
     "author": "Philip Abbet",
-    "blender": (2, 5, 8),
-    "api": 37702,
+    "blender": (2, 69, 0),
     "location": "File > Import",
     "description": "Import M2 models",
     "warning": "",
@@ -13,6 +12,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Vector
+import bmesh
 from struct import unpack, calcsize
 import os
 
@@ -522,13 +522,16 @@ class Importer:
                 vertex.normal = submesh_vertices[n].normal
 
             # UV coordinates
-            uvtex = mesh.uv_textures.new()
-            uvtex.name = submesh.name
-            for n, face in enumerate(faces):
-                datum = uvtex.data[n]
-                datum.uv1 = (submesh_vertices[face[0]].texture_coords[0], 1.0 - submesh_vertices[face[0]].texture_coords[1])
-                datum.uv2 = (submesh_vertices[face[1]].texture_coords[0], 1.0 - submesh_vertices[face[1]].texture_coords[1])
-                datum.uv3 = (submesh_vertices[face[2]].texture_coords[0], 1.0 - submesh_vertices[face[2]].texture_coords[1])
+            uvtex = mesh.uv_textures.new(submesh.name)
+            bm = bmesh.new()
+            bm.from_mesh(mesh)
+
+            uv_layer = bm.loops.layers.uv[0]
+
+            for face in bm.faces:
+                for loop in face.loops:
+                    loop[uv_layer].uv.x = submesh_vertices[loop.vert.index].texture_coords[0]
+                    loop[uv_layer].uv.y = 1.0 - submesh_vertices[loop.vert.index].texture_coords[1]
 
             # Create the vertex groups
             vgroups = {}
