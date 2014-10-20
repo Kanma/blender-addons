@@ -110,10 +110,10 @@ class Vertex:
     # 0x10  uint8   BoneIndices[4]      Which are referenced here.
     # 0x14  float   Normal[3]           A normal vector.
     # 0x20  float   TextureCoords[2]    Coordinates for a texture.
-    # 0x28  float   Unknown[2]          Null?        
+    # 0x28  float   Unknown[2]          Null?
 
     FORMAT = "<fffBBBBBBBBfffffff"
-    
+
     def __init__(self, data):
         data = unpack(Vertex.FORMAT, data)
         self.position       = Vector( (data[0], data[1], data[2]) )
@@ -127,13 +127,13 @@ class Triangle:
     # 3 * uint16
 
     FORMAT = "<HHH"
-    
+
     def __init__(self, data):
         data = unpack(Triangle.FORMAT, data)
         self.v1 = data[0]
         self.v2 = data[1]
         self.v3 = data[2]
-    
+
     def to_tuple(self, offset=0):
         return (self.v1 - offset, self.v2 - offset, self.v3 - offset)
 
@@ -146,7 +146,7 @@ class Submesh:
     # 0x0A  uint16  nTriangles          Number of triangle indices.
     # 0x0C  uint16  nBones              Number of elements in the bone lookup table.
     # 0x0E  uint16  StartBones          Starting index in the bone lookup table.
-    # 0x10  uint16  Unknown         
+    # 0x10  uint16  Unknown
     # 0x12  uint16  RootBone            Not sure.
     # 0x14  Vec3F   CenterMass          Average position of all the vertices in the submesh.
     # 0x20  Vec3F   CenterBoundingBox   The center of the box when an axis aligned box is built around the vertices in the submesh.
@@ -156,7 +156,7 @@ class Submesh:
 
     def __init__(self, data):
         data = unpack(Submesh.FORMAT, data)
-        
+
         if data[0] == 0:
             self.name = 'Body'
         else:
@@ -165,7 +165,7 @@ class Submesh:
                 self.name = '%s%02d' % (CHARACTER_MESH_PART_IDS[mesh_part_id_cat], data[0] - mesh_part_id_cat * 100)
             else:
                 self.name = 'Submesh%d' % data[0]
-        
+
         self.indices_start = data[1]
         self.indices_count = data[2]
         self.triangles_start = data[3] // 3
@@ -196,12 +196,12 @@ class Bone:
         self.key_bone_id = data[0]
         self.parent_bone_id = data[2]
         self.pivot_point = Vector( (data[-3], data[-2], data[-1]) )
-        
+
         self.parent = None
         self.children = []
-        
+
         self.bl_bone = None
-    
+
     def addChild(self, child):
         child.parent = self
         self.children.append(child)
@@ -209,7 +209,7 @@ class Bone:
     def name(self):
         if (self.key_bone_id == -1) or (self.key_bone_id >= len(BONE_NAMES)):
             return 'Bone%02d' % self.index
-        
+
         return BONE_NAMES[self.key_bone_id]
 
     def markAsUsed(self):
@@ -223,7 +223,7 @@ class Bone:
 
     def usedChildrenCount(self):
         return len(self.usedChildren())
-    
+
     def depth(self, used_only=True):
         if used_only:
             if self.usedChildrenCount() == 0:
@@ -233,10 +233,10 @@ class Bone:
             if len(self.children) == 0:
                 return 0
             return sum(map(lambda x: x.depth(used_only), self.children)) + len(self.children)
-        
+
 
 class Importer:
-    
+
     def __init__(self, only_used_bones=True, smart_bone_parenting=True,
                  enable_armature_xray=False, display_bone_names=False):
         self.m2_file   = None
@@ -253,11 +253,11 @@ class Importer:
 
         if self.skin_file is not None:
             self.skin_file.close()
-        
+
     def process(self, filename):
 
         #_____ Open the files __________
-        
+
         print("Open the files...")
         (root, ext) = os.path.splitext(filename)
 
@@ -271,15 +271,15 @@ class Importer:
             else:
                 Report_Dialog.show("ERROR - Unsupported file type: '%s'" % ext)
                 return False
-        except IOErrorm as e:
+        except IOError as e:
             Report_Dialog.show(str(e))
             return False
 
 
         #_____ Check the .M2 file __________
-        
+
         print("Checking the .M2 file...")
-        
+
         # Magic number
         magic = self.m2_file.read(4)
         if magic != b"MD20":
@@ -310,11 +310,11 @@ class Importer:
 
         vertices_count = self._getUInt32(self.m2_file, OFF_M2_VERTICES_COUNT)
         vertices_addr = self._getUInt32(self.m2_file, OFF_M2_VERTICES_ADDR)
-        
+
         print("    %d vertices found" % vertices_count)
-        
+
         vertices = []
-        
+
         self.m2_file.seek(vertices_addr)
         for i in range(0, vertices_count):
             data = self.m2_file.read(calcsize(Vertex.FORMAT))
@@ -404,28 +404,28 @@ class Importer:
 
 
         #_____ Importation of the bones __________
-        
+
         print("Importation of the bones...")
-        
+
         bones_count = self._getUInt32(self.m2_file, OFF_M2_BONES_COUNT)
         bones_addr = self._getUInt32(self.m2_file, OFF_M2_BONES_ADDR)
-        
+
         print("    %d bones found" % bones_count)
-        
+
         bones = []
-        
+
         self.m2_file.seek(bones_addr)
         for i in range(0, bones_count):
             data = self.m2_file.read(calcsize(Bone.FORMAT))
             bones.append(Bone(data, len(bones)))
-        
+
         for bone in bones:
             if bone.parent_bone_id >= 0:
                 bones[bone.parent_bone_id].addChild(bone)
-        
+
         key_bones = list(filter(lambda x: x.key_bone_id >= 0, bones))
         print("    %d key bones found" % len(key_bones))
-        
+
         root_bones = list(filter(lambda x: x.parent is None, key_bones))
         print("    %d root bones found" % len(root_bones))
 
@@ -462,24 +462,24 @@ class Importer:
         rig.location = (0, 0, 0)
         rig.show_x_ray = self.enable_armature_xray
         armature.show_names = self.display_bone_names
-        
+
         # Link the object to the scene
         scene = bpy.context.scene
         scene.objects.link(rig)
         scene.objects.active = rig
         scene.update()
-        
+
         # Creation of the bones
         bpy.ops.object.editmode_toggle()
-        
+
         if self.only_used_bones:
             bones_to_import = used_bones
         else:
             bones_to_import = bones
-        
+
         for bone in bones_to_import:
             self._createBone(bone, armature)
-        
+
         bpy.ops.object.mode_set(mode='OBJECT')
 
         # Creation of the submeshes
@@ -490,7 +490,7 @@ class Importer:
             mesh = bpy.data.meshes.new('%s_Mesh' % submesh.name)
             obj = bpy.data.objects.new(submesh.name, mesh)
             obj.location = (0, 0, 0)
-        
+
             # Link the object to the scene
             scene.objects.link(obj)
             scene.objects.active = obj
@@ -537,7 +537,7 @@ class Importer:
             vgroups = {}
             for bone in bones_to_import:
                 vgroups[bone.name()] = []
-            
+
             for v_index, vertex in enumerate(submesh_vertices):
                 for b_index, bone_index in enumerate(filter(lambda x: x > 0, vertex.bone_indices)):
                     vgroups[bones[bone_index].name()].append( (v_index, vertex.bone_weights[b_index] / 255) )
@@ -547,7 +547,7 @@ class Importer:
                     grp = obj.vertex_groups.new(name)
                     for (v, w) in vgroups[name]:
                         grp.add([v], w, 'REPLACE')
-        
+
             # Give the mesh object an armature modifier, using the vertex groups
             rig.select = True
             obj.select = True
@@ -562,13 +562,13 @@ class Importer:
 
 
         Report_Dialog.show("OK")
-        
+
         self.m2_file.close()
         self.skin_file.close()
-        
+
         self.m2_file   = None
         self.skin_file = None
-        
+
         return True
 
     def _getUInt32(self, file, offset):
@@ -578,10 +578,10 @@ class Importer:
     def _getUInt16(self, file, offset):
         file.seek(offset)
         return unpack("<H", file.read(2))[0]
-    
+
     def _createBone(self, bone, armature):
         name = bone.name()
-        
+
         print("  Creation of the bone '%s'..." % name)
 
         bl_bone = armature.edit_bones.new(name)
@@ -601,7 +601,7 @@ class Importer:
                         max_depth_bones = [child]
                     elif depth == max_depth:
                         max_depth_bones.append(child)
-                
+
                 print("%s - %d - %d" % (bone.name(), max_depth, len(max_depth_bones)))
 
                 if len(max_depth_bones) == 1:
@@ -629,9 +629,9 @@ class Importer:
         if bone.parent is not None:
             bl_bone.parent = bone.parent.bl_bone
             bl_bone.use_connect = (bone.parent.usedChildrenCount() == 1)
-        
+
         bone.bl_bone = bl_bone
-        
+
 
 ##################################### BLENDER CLASSES ####################################
 
@@ -644,7 +644,7 @@ class Report_Dialog(bpy.types.Menu):
         layout = self.layout
         for line in Report_Dialog.message.splitlines():
             layout.label(text=line)
-    
+
     @staticmethod
     def show(message=None):
         if message is not None:
